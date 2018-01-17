@@ -109,14 +109,6 @@ class DXLEventReporting(Report):
             # Diction of data to send out as the report on DXL
             report_dict = {}
 
-            # Convert results to JSON string
-            report_json_string = json.dumps(results, default=serialize_datetime_objects, indent=self.options.indent,
-                                            encoding="UTF-8")
-
-            # Compress the Cuckoo results
-            zlib_obj = zlib.compressobj(-1, zlib.DEFLATED, 31)
-            compressed_report_data = zlib_obj.compress(report_json_string) + zlib_obj.flush()
-
             # Initialize DXL client using our configuration
             log.info("Creating DXL Client")
             with DxlClient(config) as client:
@@ -124,18 +116,28 @@ class DXLEventReporting(Report):
                 log.info("Connecting to Broker")
                 client.connect()
 
-                # Create the DXL Event for zipped data
-                zipped_event = Event(CUCKOO_ZIP_EVENT_TOPIC)
+                if self.options.get("send_compressed_event", False):
+                    # Convert results to JSON string
+                    report_json_string = json.dumps(results, default=serialize_datetime_objects,
+                                                    indent=self.options.indent,
+                                                    encoding="UTF-8")
 
-                # Set the payload to be the compressed Cuckoo report analysis
-                zipped_event.payload = compressed_report_data
+                    # Compress the Cuckoo results
+                    zlib_obj = zlib.compressobj(-1, zlib.DEFLATED, 31)
+                    compressed_report_data = zlib_obj.compress(report_json_string) + zlib_obj.flush()
 
-                # Publish the full zipped reported if the payload size is smaller than one megabyte.
-                if sys.getsizeof(zipped_event.payload) < 1000000:
-                    log.info("Publishing full zipped report to DXL on topic %s", CUCKOO_ZIP_EVENT_TOPIC)
-                    client.send_event(zipped_event)
-                else:
-                    log.info("Report too large. Not publishing zipped report to DXL.")
+                    # Create the DXL Event for zipped data
+                    zipped_event = Event(CUCKOO_ZIP_EVENT_TOPIC)
+
+                    # Set the payload to be the compressed Cuckoo report analysis
+                    zipped_event.payload = compressed_report_data
+
+                    # Publish the full zipped reported if the payload size is smaller than one megabyte.
+                    if sys.getsizeof(zipped_event.payload) < self.options.get("compressed_event_max_size", 512000):
+                        log.info("Publishing full zipped report to DXL on topic %s", CUCKOO_ZIP_EVENT_TOPIC)
+                        client.send_event(zipped_event)
+                    else:
+                        log.info("Report too large. Not publishing zipped report to DXL.")
 
                 # Add the info and target entries from the Cuckoo results
                 report_dict[INFO_REPORT_KEY] = results.get(INFO_REPORT_KEY, {})
