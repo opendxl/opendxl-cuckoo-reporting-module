@@ -12,7 +12,8 @@ documentation for information on Cuckoo Reporting Modules.
 
 See the
 [Wiki](https://github.com/opendxl/opendxl-cuckoo-reporting-module/wiki)
-for an overview, installation instructions, and examples of the OpenDXL Cuckoo Reporting Module.
+for an overview, installation instructions, configuration, and usage of the OpenDXL Cuckoo Reporting Module. The Wiki
+also contains examples for receiving the OpenDXL Cuckoo Reporting Module events.
 
 ## Bugs and Feedback
 
