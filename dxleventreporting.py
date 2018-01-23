@@ -6,7 +6,7 @@
 DXL Event Reporting module for Cuckoo version 2.0.5.
 
 Cuckoo report processing module which sends the Cuckoo analysis report data as a Data Exchange Layer (DXL) event on a
-DXL Fabric. This module will send out the Cuckoo analysis report data in two DXL events. One event will contained
+DXL Fabric. This module will send out the Cuckoo analysis report data in two DXL events. One event will contain
 the analysis report in a compressed format and will be sent on the DXL topic "/cuckoo/event/report/zip". The second
 event will contain the info and target sections of the Cuckoo analysis report and any sections specified in the
 "items_to_include_in_report" setting under the "[dxleventreporting]" section of the report.conf file. The second event
@@ -68,7 +68,7 @@ def sub_level_getter(level, key):
     :param key: Key to find in the dictionary
     :return: The value associated with the key or the empty string
     """
-    return "" if level is "" else level.get(key, "")
+    return "" if not isinstance(level, dict) else level.get(key, "")
 
 
 def create_and_get_sub_level(level, key):
