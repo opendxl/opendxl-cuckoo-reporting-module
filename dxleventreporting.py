@@ -44,6 +44,9 @@ CUCKOO_REPORT_EVENT_TOPIC = "/cuckoo/event/report"
 INFO_REPORT_KEY = "info"
 TARGET_REPORT_KEY = "target"
 
+# Not found object
+NOT_FOUND_OBJ = object()
+
 
 def serialize_datetime_objects(obj):
     """
@@ -68,7 +71,7 @@ def sub_level_getter(level, key):
     :param key: Key to find in the dictionary
     :return: The value associated with the key or the empty string
     """
-    return "" if not isinstance(level, dict) else level.get(key, "")
+    return NOT_FOUND_OBJ if not isinstance(level, dict) else level.get(key, NOT_FOUND_OBJ)
 
 
 def create_and_get_sub_level(level, key):
@@ -132,8 +135,8 @@ class DXLEventReporting(Report):
                     # Set the payload to be the compressed Cuckoo report analysis
                     zipped_event.payload = compressed_report_data
 
-                    # Publish the full zipped reported if the payload size is smaller than one megabyte.
-                    if sys.getsizeof(zipped_event.payload) < self.options.get("compressed_event_max_size", 512000):
+                    # Publish the full zipped reported if the payload size is smaller than the maximum configured size.
+                    if sys.getsizeof(zipped_event.payload) <= self.options.get("compressed_event_max_size", 512000):
                         log.info("Publishing full zipped report to DXL on topic %s", CUCKOO_ZIP_EVENT_TOPIC)
                         client.send_event(zipped_event)
                     else:
@@ -151,6 +154,10 @@ class DXLEventReporting(Report):
 
                     # Loop over list of items to include
                     for report_include_item in items_to_include_in_report.split(","):
+                        if not report_include_item:
+                            log.warn("items_to_include_in_report includes an emtpy item.")
+                            continue
+
                         # If the item does not have sub items then add it directly to the results report dictionary
                         if "." not in report_include_item:
                             report_dict.update({report_include_item: results.get(report_include_item, {})})
@@ -160,6 +167,11 @@ class DXLEventReporting(Report):
                         sub_sections_list = report_include_item.split(".")
                         # Find the value in the Cuckoo results dictionary
                         sub_section_value = reduce(sub_level_getter, sub_sections_list, results)
+
+                        if sub_section_value is NOT_FOUND_OBJ:
+                            log.warn(report_include_item + " is not found in the Cuckoo report.")
+                            continue
+
                         # Create all of the sub item levels in the results reports dictionary
                         result_sub_section = reduce(create_and_get_sub_level, sub_sections_list[0:-1], report_dict)
                         # Add the value found in the Cuckoo results
