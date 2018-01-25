@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 ################################################################################
-# Copyright (c) 2017 McAfee Inc. - All Rights Reserved.
+# Copyright (c) 2018 McAfee Inc. - All Rights Reserved.
 ################################################################################
 """
 DXL Event Reporting module for Cuckoo version 2.0.5.
