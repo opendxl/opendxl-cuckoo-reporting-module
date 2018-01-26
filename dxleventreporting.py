@@ -214,12 +214,7 @@ class DXLEventReporting(Report):
                         log.warn("items_to_include_in_report includes an emtpy item.")
                         continue
 
-                    # If the item does not have sub items then add it directly to the results report dictionary
-                    if "." not in report_include_item:
-                        report_dict.update({report_include_item: results.get(report_include_item, {})})
-                        continue
-
-                    # Process items to include that have sub items
+                    # Separate report_include_item in to sub items
                     sub_sections_list = report_include_item.split(".")
                     # Find the value in the Cuckoo results dictionary
                     sub_section_value = reduce(sub_level_getter, sub_sections_list, results)
